@@ -71,7 +71,7 @@ const createEmail = (raw: string): Email => {
 class InvalidEmailError extends Error {
   constructor(email: string) {
     super(`Invalid email: ${email}`);
-    this.name = 'InvalidEmailError';
+    this.name = "InvalidEmailError";
   }
 }
 ```
@@ -106,8 +106,8 @@ Each use case is a single function. It orchestrates domain logic and calls ports
 
 ```typescript
 // src/application/use-cases/get-user-profile.ts
-import type { UserRepository } from '@/src/ports/outbound/user-repository';
-import type { User } from '@/src/domain/entities/user';
+import type { UserRepository } from "@/src/ports/outbound/user-repository";
+import type { User } from "@/src/domain/entities/user";
 
 type GetUserProfile = {
   execute: (userId: string) => Promise<User>;
@@ -130,7 +130,7 @@ const createGetUserProfile = (deps: {
 
 ```typescript
 // src/adapters/api/user-api-adapter.ts
-import type { UserRepository } from '@/src/ports/outbound/user-repository';
+import type { UserRepository } from "@/src/ports/outbound/user-repository";
 
 const createUserApiAdapter = (baseUrl: string): UserRepository => ({
   findById: async (id) => {
@@ -147,20 +147,20 @@ const createUserApiAdapter = (baseUrl: string): UserRepository => ({
 
   save: async (user) => {
     await fetch(`${baseUrl}/users/${user.id}`, {
-      method: 'PUT',
-      headers: { 'Content-Type': 'application/json' },
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
       body: JSON.stringify(user),
     });
   },
 
   delete: async (id) => {
-    await fetch(`${baseUrl}/users/${id}`, { method: 'DELETE' });
+    await fetch(`${baseUrl}/users/${id}`, { method: "DELETE" });
   },
 });
 
 // src/adapters/storage/user-storage-adapter.ts
-import AsyncStorage from '@react-native-async-storage/async-storage';
-import type { UserRepository } from '@/src/ports/outbound/user-repository';
+import AsyncStorage from "@react-native-async-storage/async-storage";
+import type { UserRepository } from "@/src/ports/outbound/user-repository";
 
 const createUserStorageAdapter = (): UserRepository => ({
   findById: async (id) => {
@@ -175,10 +175,10 @@ const createUserStorageAdapter = (): UserRepository => ({
 
 ```typescript
 // hooks/use-user-profile.ts
-import { createGetUserProfile } from '@/src/application/use-cases/get-user-profile';
-import { createUserApiAdapter } from '@/src/adapters/api/user-api-adapter';
+import { createGetUserProfile } from "@/src/application/use-cases/get-user-profile";
+import { createUserApiAdapter } from "@/src/adapters/api/user-api-adapter";
 
-const userRepository = createUserApiAdapter('https://api.followme.app');
+const userRepository = createUserApiAdapter("https://api.followme.app");
 const getUserProfile = createGetUserProfile({ userRepository });
 
 export const useUserProfile = (userId: string) => {
@@ -187,7 +187,8 @@ export const useUserProfile = (userId: string) => {
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    getUserProfile.execute(userId)
+    getUserProfile
+      .execute(userId)
       .then(setUser)
       .catch(setError)
       .finally(() => setIsLoading(false));
@@ -204,7 +205,7 @@ Domain and application layers are tested WITHOUT mocks for external dependencies
 ```typescript
 // src/application/use-cases/get-user-profile.test.ts
 const mockRepo: UserRepository = {
-  findById: async (id) => id === '1' ? testUser : null,
+  findById: async (id) => (id === "1" ? testUser : null),
   findByEmail: async () => null,
   save: async () => {},
   delete: async () => {},
@@ -212,13 +213,13 @@ const mockRepo: UserRepository = {
 
 const useCase = createGetUserProfile({ userRepository: mockRepo });
 
-test('returns user when found', async () => {
-  const user = await useCase.execute('1');
+test("returns user when found", async () => {
+  const user = await useCase.execute("1");
   expect(user).toEqual(testUser);
 });
 
-test('throws when user not found', async () => {
-  await expect(useCase.execute('999')).rejects.toThrow(UserNotFoundError);
+test("throws when user not found", async () => {
+  await expect(useCase.execute("999")).rejects.toThrow(UserNotFoundError);
 });
 ```
 

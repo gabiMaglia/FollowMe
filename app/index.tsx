@@ -1,34 +1,40 @@
-import { StyleSheet, Text, View } from "react-native";
+import { Redirect } from "expo-router";
+import { ActivityIndicator, StyleSheet, View } from "react-native";
 
-export default function Page() {
-  return (
-    <View style={styles.container}>
-      <View style={styles.main}>
-        <Text style={styles.title}>Hello World</Text>
-        <Text style={styles.subtitle}>This is the first page of your app.</Text>
+import { useAuthStore } from "@/hooks/use-auth-store";
+import { useThemeColor } from "@/hooks/use-theme-color";
+
+export default function Index() {
+  const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
+  const isLoading = useAuthStore((s) => s.isLoading);
+  const user = useAuthStore((s) => s.user);
+
+  const backgroundColor = useThemeColor({}, "background");
+  const tintColor = useThemeColor({}, "tint");
+
+  if (isLoading) {
+    return (
+      <View style={[styles.loading, { backgroundColor }]}>
+        <ActivityIndicator size="large" color={tintColor} />
       </View>
-    </View>
-  );
+    );
+  }
+
+  if (!isAuthenticated) {
+    return <Redirect href="/(auth)/login" />;
+  }
+
+  if (!user?.onboardingCompleted) {
+    return <Redirect href="/(onboarding)" />;
+  }
+
+  return <Redirect href="/(tabs)" />;
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    alignItems: "center",
-    padding: 24,
-  },
-  main: {
+  loading: {
     flex: 1,
     justifyContent: "center",
-    maxWidth: 960,
-    marginHorizontal: "auto",
-  },
-  title: {
-    fontSize: 64,
-    fontWeight: "bold",
-  },
-  subtitle: {
-    fontSize: 36,
-    color: "#38434D",
+    alignItems: "center",
   },
 });

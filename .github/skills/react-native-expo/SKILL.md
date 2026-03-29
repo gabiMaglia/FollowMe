@@ -10,9 +10,9 @@ description: "Use when building React Native components, screens, navigation, or
 Always use arrow functions, named exports, destructured props with `...rest` spread last.
 
 ```tsx
-import { StyleSheet } from 'react-native';
-import { ThemedText } from '@/components/themed-text';
-import { ThemedView } from '@/components/themed-view';
+import { StyleSheet } from "react-native";
+import { ThemedText } from "@/components/themed-text";
+import { ThemedView } from "@/components/themed-view";
 
 type ProfileCardProps = {
   name: string;
@@ -58,13 +58,13 @@ app/
 ### Layouts
 
 ```tsx
-import { Stack } from 'expo-router';
+import { Stack } from "expo-router";
 
 export const RootLayout = () => {
   return (
     <Stack>
       <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
-      <Stack.Screen name="modal" options={{ presentation: 'modal' }} />
+      <Stack.Screen name="modal" options={{ presentation: "modal" }} />
     </Stack>
   );
 };
@@ -73,22 +73,22 @@ export const RootLayout = () => {
 ### Navigation
 
 ```tsx
-import { Link, useRouter } from 'expo-router';
+import { Link, useRouter } from "expo-router";
 
 // Declarative
-<Link href="/settings/profile">Go to Profile</Link>
+<Link href="/settings/profile">Go to Profile</Link>;
 
 // Imperative
 const router = useRouter();
-router.push('/settings/profile');
-router.replace('/login');
+router.push("/settings/profile");
+router.replace("/login");
 router.back();
 ```
 
 ### Route Parameters
 
 ```tsx
-import { useLocalSearchParams } from 'expo-router';
+import { useLocalSearchParams } from "expo-router";
 
 // In app/[id].tsx
 const { id } = useLocalSearchParams<{ id: string }>();
@@ -100,8 +100,8 @@ Screens are presentation only. They call hooks and render components. No busines
 
 ```tsx
 // app/(tabs)/index.tsx
-import { useUsers } from '@/hooks/use-users';
-import { UserList } from '@/components/user-list';
+import { useUsers } from "@/hooks/use-users";
+import { UserList } from "@/components/user-list";
 
 export const HomeScreen = () => {
   const { users, isLoading, error } = useUsers();
@@ -123,7 +123,7 @@ import Animated, {
   withTiming,
   Easing,
   runOnJS,
-} from 'react-native-reanimated';
+} from "react-native-reanimated";
 
 export const AnimatedCard = () => {
   const scale = useSharedValue(1);
@@ -134,7 +134,7 @@ export const AnimatedCard = () => {
 
   const handlePress = () => {
     scale.value = withSpring(1.1, {}, (finished) => {
-      'worklet';
+      "worklet";
       if (finished) {
         scale.value = withTiming(1);
       }
@@ -151,21 +151,21 @@ export const AnimatedCard = () => {
 
 ## Expo APIs — Always Prefer Over Bare RN
 
-| Task | Use This | Not This |
-|------|----------|----------|
-| Images | `expo-image` | `<Image>` from RN |
-| Haptics | `expo-haptics` | third-party libs |
-| Fonts | `expo-font` | manual font loading |
-| Linking | `expo-linking` | `Linking` from RN |
-| Browser | `expo-web-browser` | `Linking.openURL` |
-| Splash | `expo-splash-screen` | manual splash logic |
-| Icons | `expo-symbols` (iOS) | icon fonts only |
-| Constants | `expo-constants` | hardcoded values |
+| Task      | Use This             | Not This            |
+| --------- | -------------------- | ------------------- |
+| Images    | `expo-image`         | `<Image>` from RN   |
+| Haptics   | `expo-haptics`       | third-party libs    |
+| Fonts     | `expo-font`          | manual font loading |
+| Linking   | `expo-linking`       | `Linking` from RN   |
+| Browser   | `expo-web-browser`   | `Linking.openURL`   |
+| Splash    | `expo-splash-screen` | manual splash logic |
+| Icons     | `expo-symbols` (iOS) | icon fonts only     |
+| Constants | `expo-constants`     | hardcoded values    |
 
 ### expo-image
 
 ```tsx
-import { Image } from 'expo-image';
+import { Image } from "expo-image";
 
 <Image
   source={{ uri: avatarUrl }}
@@ -173,13 +173,13 @@ import { Image } from 'expo-image';
   contentFit="cover"
   placeholder={blurhash}
   transition={200}
-/>
+/>;
 ```
 
 ### expo-haptics
 
 ```tsx
-import * as Haptics from 'expo-haptics';
+import * as Haptics from "expo-haptics";
 
 const handlePress = () => {
   Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
@@ -205,14 +205,14 @@ Use `Platform.OS` only for minor style tweaks.
 
 ```tsx
 // hooks/use-theme-color.ts
-import { useColorScheme } from '@/hooks/use-color-scheme';
-import { Colors } from '@/constants/theme';
+import { useColorScheme } from "@/hooks/use-color-scheme";
+import { Colors } from "@/constants/theme";
 
 export const useThemeColor = (
   props: { light?: string; dark?: string },
-  colorName: keyof typeof Colors.light & keyof typeof Colors.dark
+  colorName: keyof typeof Colors.light & keyof typeof Colors.dark,
 ) => {
-  const theme = useColorScheme() ?? 'light';
+  const theme = useColorScheme() ?? "light";
   const colorFromProps = props[theme];
 
   return colorFromProps ?? Colors[theme][colorName];

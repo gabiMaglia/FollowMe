@@ -23,7 +23,7 @@ const styles = StyleSheet.create({
 });
 
 // WRONG — never do this
-<View style={{ padding: 16, backgroundColor: '#fff' }} />
+<View style={{ padding: 16, backgroundColor: "#fff" }} />;
 ```
 
 ## Spacing System
@@ -47,9 +47,9 @@ Apply consistently:
 ```typescript
 const styles = StyleSheet.create({
   container: {
-    padding: Spacing.md,       // 16
-    gap: Spacing.sm,           // 8
-    marginBottom: Spacing.lg,  // 24
+    padding: Spacing.md, // 16
+    gap: Spacing.sm, // 8
+    marginBottom: Spacing.lg, // 24
   },
 });
 ```
@@ -61,10 +61,10 @@ const styles = StyleSheet.create({
 const FontSize = {
   xs: 12,
   sm: 14,
-  md: 16,    // body
+  md: 16, // body
   lg: 20,
   xl: 24,
-  xxl: 32,   // hero/title
+  xxl: 32, // hero/title
 } as const;
 
 const LineHeight = {
@@ -86,11 +86,11 @@ Use through `ThemedText` variants:
 ## Theming — Light / Dark
 
 ```tsx
-import { useThemeColor } from '@/hooks/use-theme-color';
+import { useThemeColor } from "@/hooks/use-theme-color";
 
 export const Card = ({ children }: { children: React.ReactNode }) => {
-  const backgroundColor = useThemeColor({}, 'background');
-  const borderColor = useThemeColor({}, 'border');
+  const backgroundColor = useThemeColor({}, "background");
+  const borderColor = useThemeColor({}, "border");
 
   return (
     <View style={[styles.card, { backgroundColor, borderColor }]}>
@@ -121,21 +121,21 @@ const styles = StyleSheet.create({
   },
   // Horizontal row
   row: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     gap: 12,
   },
   // Centered content
   centered: {
     flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
+    justifyContent: "center",
+    alignItems: "center",
   },
   // Space between items
   spaceBetween: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
   },
 });
 ```
@@ -143,10 +143,10 @@ const styles = StyleSheet.create({
 ### Safe Areas
 
 ```tsx
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { SafeAreaView } from "react-native-safe-area-context";
 
 export const ScreenLayout = ({ children }: { children: React.ReactNode }) => (
-  <SafeAreaView style={styles.screen} edges={['top']}>
+  <SafeAreaView style={styles.screen} edges={["top"]}>
     {children}
   </SafeAreaView>
 );
@@ -164,14 +164,14 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     paddingVertical: 12,
     borderRadius: 8,
-    justifyContent: 'center',
-    alignItems: 'center',
+    justifyContent: "center",
+    alignItems: "center",
   },
   iconButton: {
     width: 44,
     height: 44,
-    justifyContent: 'center',
-    alignItems: 'center',
+    justifyContent: "center",
+    alignItems: "center",
   },
 });
 ```
@@ -179,8 +179,8 @@ const styles = StyleSheet.create({
 ## Pressable with Feedback
 
 ```tsx
-import { Pressable, StyleSheet } from 'react-native';
-import * as Haptics from 'expo-haptics';
+import { Pressable, StyleSheet } from "react-native";
+import * as Haptics from "expo-haptics";
 
 type ActionButtonProps = {
   label: string;
@@ -196,10 +196,7 @@ export const ActionButton = ({ label, onPress }: ActionButtonProps) => {
   return (
     <Pressable
       onPress={handlePress}
-      style={({ pressed }) => [
-        styles.button,
-        pressed && styles.buttonPressed,
-      ]}
+      style={({ pressed }) => [styles.button, pressed && styles.buttonPressed]}
     >
       <ThemedText type="defaultSemiBold">{label}</ThemedText>
     </Pressable>
@@ -226,7 +223,7 @@ import Animated, {
   useSharedValue,
   useAnimatedStyle,
   withSpring,
-} from 'react-native-reanimated';
+} from "react-native-reanimated";
 
 export const ScalePressable = ({ children, onPress }) => {
   const scale = useSharedValue(1);
@@ -237,13 +234,15 @@ export const ScalePressable = ({ children, onPress }) => {
 
   return (
     <Pressable
-      onPressIn={() => { scale.value = withSpring(0.95); }}
-      onPressOut={() => { scale.value = withSpring(1); }}
+      onPressIn={() => {
+        scale.value = withSpring(0.95);
+      }}
+      onPressOut={() => {
+        scale.value = withSpring(1);
+      }}
       onPress={onPress}
     >
-      <Animated.View style={animatedStyle}>
-        {children}
-      </Animated.View>
+      <Animated.View style={animatedStyle}>{children}</Animated.View>
     </Pressable>
   );
 };
@@ -264,6 +263,7 @@ export const ScalePressable = ({ children, onPress }) => {
 ```
 
 Key rules:
+
 - Every interactive element needs `accessibilityRole`
 - Provide `accessibilityLabel` for non-text elements (icons, images)
 - Use `accessibilityHint` for non-obvious actions
@@ -272,7 +272,7 @@ Key rules:
 ## Responsive Design
 
 ```tsx
-import { Dimensions, useWindowDimensions } from 'react-native';
+import { Dimensions, useWindowDimensions } from "react-native";
 
 export const ResponsiveGrid = () => {
   const { width } = useWindowDimensions();
