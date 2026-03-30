@@ -1,19 +1,25 @@
-import { ActivityIndicator, StyleSheet } from "react-native";
+import { ActivityIndicator, Pressable, StyleSheet, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
 import { FollowMeMap } from "@/components/follow-me-map";
 import { ThemedText } from "@/components/themed-text";
 import { ThemedView } from "@/components/themed-view";
-import { Spacing } from "@/constants/theme";
+import { Colors, Spacing } from "@/constants/theme";
 import { useMapTracking } from "@/hooks/use-map-tracking";
 import { useThemeColor } from "@/hooks/use-theme-color";
 
 export default function MapScreen() {
-  const { userLocation, contacts, isTracking, permissionDenied } =
-    useMapTracking();
+  const {
+    userLocation,
+    contacts,
+    isTracking,
+    permissionStatus,
+    hasBackgroundPermission,
+    sendCurrentLocation,
+  } = useMapTracking();
   const textSecondary = useThemeColor({}, "textSecondary");
 
-  if (permissionDenied) {
+  if (permissionStatus === "denied") {
     return (
       <ThemedView style={styles.centered}>
         <SafeAreaView style={styles.centered}>
@@ -38,6 +44,19 @@ export default function MapScreen() {
   return (
     <ThemedView style={styles.flex}>
       <FollowMeMap userLocation={userLocation} contacts={contacts} />
+      <Pressable style={styles.sendButton} onPress={sendCurrentLocation}>
+        <ThemedText style={styles.sendButtonText}>Enviar ubicación</ThemedText>
+      </Pressable>
+      {!hasBackgroundPermission ? (
+        <SafeAreaView style={styles.banner} edges={["bottom"]}>
+          <View style={styles.bannerContent}>
+            <ThemedText style={styles.bannerText}>
+              Activa la ubicación en segundo plano para que tus contactos te
+              vean siempre
+            </ThemedText>
+          </View>
+        </SafeAreaView>
+      ) : null}
     </ThemedView>
   );
 }
@@ -55,5 +74,40 @@ const styles = StyleSheet.create({
   deniedText: {
     textAlign: "center",
     marginTop: Spacing.sm,
+  },
+  banner: {
+    position: "absolute",
+    bottom: 0,
+    left: 0,
+    right: 0,
+  },
+  bannerContent: {
+    backgroundColor: Colors.light.warning,
+    paddingHorizontal: Spacing.md,
+    paddingVertical: Spacing.sm,
+  },
+  bannerText: {
+    fontSize: 13,
+    textAlign: "center",
+    color: "#000",
+  },
+  sendButton: {
+    position: "absolute",
+    top: 60,
+    right: Spacing.md,
+    backgroundColor: Colors.light.primary,
+    paddingHorizontal: Spacing.md,
+    paddingVertical: Spacing.sm,
+    borderRadius: 12,
+    elevation: 4,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.25,
+    shadowRadius: 4,
+  },
+  sendButtonText: {
+    color: Colors.light.background,
+    fontWeight: "600",
+    fontSize: 14,
   },
 });

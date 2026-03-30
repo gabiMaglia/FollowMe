@@ -1,24 +1,46 @@
 import * as Haptics from "expo-haptics";
 import { Image } from "expo-image";
-import { useRouter } from "expo-router";
-import { Alert, Pressable, ScrollView, StyleSheet, View } from "react-native";
+import { useEffect } from "react";
+import {
+    Alert,
+    Pressable,
+    ScrollView,
+    StyleSheet,
+    Switch,
+    View,
+} from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
 import { ThemedText } from "@/components/themed-text";
 import { ThemedView } from "@/components/themed-view";
 import { Colors, Radii, Spacing } from "@/constants/theme";
 import { useAuthStore } from "@/hooks/use-auth-store";
+import { useContactsStore } from "@/hooks/use-contacts-store";
 import { useThemeColor } from "@/hooks/use-theme-color";
 
 export default function ProfileScreen() {
-  const router = useRouter();
   const user = useAuthStore((s) => s.user);
   const logout = useAuthStore((s) => s.logout);
   const isLoading = useAuthStore((s) => s.isLoading);
 
+  const contacts = useContactsStore((s) => s.contacts);
+  const isDiscoverable = useContactsStore((s) => s.isDiscoverable);
+  const loadContacts = useContactsStore((s) => s.loadContacts);
+  const toggleLocationSharing = useContactsStore(
+    (s) => s.toggleLocationSharing,
+  );
+  const toggleDiscoverability = useContactsStore(
+    (s) => s.toggleDiscoverability,
+  );
+
   const surfaceColor = useThemeColor({}, "surface");
   const borderColor = useThemeColor({}, "border");
   const errorColor = useThemeColor({}, "error");
+  const tintColor = useThemeColor({}, "tint");
+
+  useEffect(() => {
+    loadContacts();
+  }, [loadContacts]);
 
   const handleLogout = () => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
@@ -29,7 +51,6 @@ export default function ProfileScreen() {
         style: "destructive",
         onPress: async () => {
           await logout();
-          router.replace("/");
         },
       },
     ]);
@@ -89,6 +110,74 @@ export default function ProfileScreen() {
             </View>
           </View>
 
+          <View style={styles.section}>
+            <ThemedText type="defaultSemiBold" style={styles.sectionTitle}>
+              Privacy
+            </ThemedText>
+            <View
+              style={[
+                styles.card,
+                { backgroundColor: surfaceColor, borderColor },
+              ]}
+            >
+              <View style={styles.switchRow}>
+                <View style={styles.switchLabel}>
+                  <ThemedText style={styles.label}>Discoverable</ThemedText>
+                  <ThemedText style={styles.switchHint}>
+                    Other users can find you by searching
+                  </ThemedText>
+                </View>
+                <Switch
+                  value={isDiscoverable}
+                  onValueChange={toggleDiscoverability}
+                  trackColor={{ true: tintColor }}
+                />
+              </View>
+            </View>
+          </View>
+
+          {contacts.length > 0 ? (
+            <View style={styles.section}>
+              <ThemedText type="defaultSemiBold" style={styles.sectionTitle}>
+                Location sharing
+              </ThemedText>
+              <View
+                style={[
+                  styles.card,
+                  { backgroundColor: surfaceColor, borderColor },
+                ]}
+              >
+                {contacts.map((contact, index) => (
+                  <View key={contact.userId}>
+                    {index > 0 ? (
+                      <View
+                        style={[
+                          styles.divider,
+                          { backgroundColor: borderColor },
+                        ]}
+                      />
+                    ) : null}
+                    <View style={styles.switchRow}>
+                      <ThemedText style={styles.label} numberOfLines={1}>
+                        {contact.userId}
+                      </ThemedText>
+                      <Switch
+                        value={contact.isLocationShared}
+                        onValueChange={() =>
+                          toggleLocationSharing(
+                            contact.userId,
+                            !contact.isLocationShared,
+                          )
+                        }
+                        trackColor={{ true: tintColor }}
+                      />
+                    </View>
+                  </View>
+                ))}
+              </View>
+            </View>
+          ) : null}
+
           <View style={styles.footer}>
             <Pressable
               onPress={handleLogout}
@@ -146,6 +235,9 @@ const styles = StyleSheet.create({
     paddingHorizontal: Spacing.lg,
     marginBottom: Spacing.lg,
   },
+  sectionTitle: {
+    marginBottom: Spacing.sm,
+  },
   card: {
     borderRadius: Radii.lg,
     borderWidth: 1,
@@ -158,6 +250,22 @@ const styles = StyleSheet.create({
     paddingHorizontal: Spacing.md,
     paddingVertical: Spacing.sm,
     minHeight: 48,
+  },
+  switchRow: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    paddingHorizontal: Spacing.md,
+    paddingVertical: Spacing.sm,
+    minHeight: 48,
+  },
+  switchLabel: {
+    flex: 1,
+    marginRight: Spacing.sm,
+  },
+  switchHint: {
+    fontSize: 12,
+    opacity: 0.5,
   },
   divider: {
     height: StyleSheet.hairlineWidth,

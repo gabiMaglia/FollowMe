@@ -1,7 +1,9 @@
+import * as Location from "expo-location";
 import { create } from "zustand";
 
 import { createApiClient } from "@/src/adapters/api/api-client";
 import { createAuthApiAdapter } from "@/src/adapters/api/auth-api-adapter";
+import { createLocationApiAdapter } from "@/src/adapters/api/location-api-adapter";
 import { createSecureTokenStorage } from "@/src/adapters/storage/secure-token-storage";
 import { createCheckAuthUseCase } from "@/src/application/use-cases/check-auth";
 import { createCompleteOnboardingUseCase } from "@/src/application/use-cases/complete-onboarding";
@@ -44,6 +46,7 @@ type AuthStore = AuthState & AuthActions;
 const tokenStorage = createSecureTokenStorage();
 
 let authRepository: AuthRepository;
+let locationApi: ReturnType<typeof createLocationApiAdapter>;
 
 const initializeAuthRepository = () => {
   const apiClient = createApiClient(tokenStorage, {
@@ -55,6 +58,7 @@ const initializeAuthRepository = () => {
     },
   });
   authRepository = createAuthApiAdapter(apiClient);
+  locationApi = createLocationApiAdapter(apiClient);
 };
 
 initializeAuthRepository();
@@ -87,6 +91,32 @@ const checkAuthUseCase = createCheckAuthUseCase({
   tokenStorage,
 });
 
+// --- Location snapshot helper ---
+const sendLocationSnapshot = async (): Promise<void> => {
+  try {
+    const { status } = await Location.getForegroundPermissionsAsync();
+    console.log("[LocationSnapshot] Permission status:", status);
+    if (status !== "granted") return;
+
+    const position = await Location.getCurrentPositionAsync({
+      accuracy: Location.Accuracy.Balanced,
+    });
+    console.log(
+      "[LocationSnapshot] Got position:",
+      position.coords.latitude,
+      position.coords.longitude,
+    );
+
+    await locationApi.sendLocationUpdate({
+      latitude: position.coords.latitude,
+      longitude: position.coords.longitude,
+    });
+    console.log("[LocationSnapshot] POST /location success");
+  } catch (error) {
+    console.warn("[LocationSnapshot] Failed:", error);
+  }
+};
+
 // --- Store ---
 const initialState: AuthState = {
   user: null,
@@ -104,6 +134,7 @@ const useAuthStore = create<AuthStore>((set) => ({
       const { user } = await loginUseCase.execute(email, password);
       await tokenStorage.saveUser(user);
       set({ user, isAuthenticated: true, isLoading: false });
+      sendLocationSnapshot();
     } catch (error) {
       set({ isLoading: false, error: getErrorMessage(error) });
       throw error;
@@ -127,6 +158,7 @@ const useAuthStore = create<AuthStore>((set) => ({
         isAuthenticated: true,
         isLoading: false,
       });
+      sendLocationSnapshot();
     } catch (error) {
       set({ isLoading: false, error: getErrorMessage(error) });
       throw error;
@@ -139,6 +171,7 @@ const useAuthStore = create<AuthStore>((set) => ({
       const { user } = await loginWithGoogleUseCase.execute(idToken);
       await tokenStorage.saveUser(user);
       set({ user, isAuthenticated: true, isLoading: false });
+      sendLocationSnapshot();
     } catch (error) {
       set({ isLoading: false, error: getErrorMessage(error) });
       throw error;
@@ -158,6 +191,7 @@ const useAuthStore = create<AuthStore>((set) => ({
         user: state.user ? { ...state.user, onboardingCompleted: true } : null,
         isLoading: false,
       }));
+      sendLocationSnapshot();
       return { isMinor: result.isMinor };
     } catch (error) {
       set({ isLoading: false, error: getErrorMessage(error) });
@@ -168,6 +202,7 @@ const useAuthStore = create<AuthStore>((set) => ({
   logout: async () => {
     set({ isLoading: true });
     try {
+      await sendLocationSnapshot();
       await logoutUseCase.execute();
     } finally {
       await tokenStorage.clearUser();

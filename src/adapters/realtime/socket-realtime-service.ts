@@ -1,6 +1,9 @@
 import { io, type Socket } from "socket.io-client";
 
-import type { ContactLocation } from "@/src/domain/entities/location";
+import type {
+    ContactLocation,
+    Coordinates,
+} from "@/src/domain/entities/location";
 import type { RealtimeService } from "@/src/ports/outbound/realtime-service";
 
 const API_BASE_URL =
@@ -38,6 +41,18 @@ const createSocketRealtimeService = (): RealtimeService => {
   const disconnect: RealtimeService["disconnect"] = () => {
     socket?.disconnect();
     socket = null;
+  };
+
+  const sendLocationUpdate: RealtimeService["sendLocationUpdate"] = (
+    coordinates: Coordinates,
+  ) => {
+    if (!socket?.connected) return;
+
+    socket.emit("location:update", {
+      latitude: coordinates.latitude,
+      longitude: coordinates.longitude,
+      timestamp: Date.now(),
+    });
   };
 
   const onContactLocationUpdate: RealtimeService["onContactLocationUpdate"] = (
@@ -78,6 +93,7 @@ const createSocketRealtimeService = (): RealtimeService => {
   return {
     connect,
     disconnect,
+    sendLocationUpdate,
     onContactLocationUpdate,
     isConnected,
   };
