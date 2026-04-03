@@ -19,10 +19,11 @@ const createSocketRealtimeService = (): RealtimeService => {
 
     socket = io(WS_URL, {
       auth: { token },
-      transports: ["websocket"],
+      transports: ["websocket", "polling"],
       reconnection: true,
       reconnectionAttempts: 10,
       reconnectionDelay: 1_000,
+      timeout: 10_000,
     });
 
     socket.on("connect", () => {
@@ -62,19 +63,28 @@ const createSocketRealtimeService = (): RealtimeService => {
 
     const handler = (data: {
       userId: string;
-      displayName: string;
+      displayName?: string;
       latitude: number;
       longitude: number;
-      timestamp: number;
+      timestamp?: number;
+      updatedAt?: string;
+      accuracy?: number;
     }) => {
+      const timestamp =
+        typeof data.timestamp === "number"
+          ? data.timestamp
+          : data.updatedAt
+            ? new Date(data.updatedAt).getTime()
+            : Date.now();
+
       const contact: ContactLocation = {
         userId: data.userId,
-        displayName: data.displayName,
+        displayName: data.displayName ?? "",
         coordinates: {
           latitude: data.latitude,
           longitude: data.longitude,
         },
-        timestamp: data.timestamp,
+        timestamp,
       };
       callback(contact);
     };

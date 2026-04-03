@@ -20,6 +20,12 @@ type OnboardingParams = {
   dateOfBirth: string;
 };
 
+type UpdateProfileParams = {
+  displayName?: string;
+  name?: string;
+  avatarUrl?: string;
+};
+
 type AuthResponse = {
   tokens: AuthTokens;
   user: User;
@@ -46,13 +52,22 @@ type AuthRepository = {
     params: OnboardingParams,
     accessToken: string,
   ) => Promise<OnboardingResponse>;
+  updateMyProfile: (params: UpdateProfileParams) => Promise<User>;
   refreshToken: (refreshToken: string) => Promise<RefreshResponse>;
   logout: (refreshToken: string) => Promise<void>;
   logoutAll: (accessToken: string) => Promise<void>;
 };
 
 export type {
-    AuthRepository, AuthResponse, GoogleAuthParams, LoginParams, OnboardingParams, OnboardingResponse,
-    RefreshResponse, RegisterParams, RegisterResponse
+    AuthRepository,
+    AuthResponse,
+    GoogleAuthParams,
+    LoginParams,
+    OnboardingParams,
+    OnboardingResponse,
+    RefreshResponse,
+    RegisterParams,
+    RegisterResponse,
+    UpdateProfileParams
 };
 

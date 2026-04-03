@@ -14,6 +14,7 @@ import {
     createLogoutUseCase,
 } from "@/src/application/use-cases/logout";
 import { createRegisterUseCase } from "@/src/application/use-cases/register";
+import { createUpdateProfileUseCase } from "@/src/application/use-cases/update-profile";
 import type { User } from "@/src/domain/entities/user";
 import type { AuthRepository } from "@/src/ports/outbound/auth-repository";
 
@@ -36,6 +37,7 @@ type AuthActions = {
   logout: () => Promise<void>;
   logoutAll: () => Promise<void>;
   checkAuth: () => Promise<void>;
+  updateDisplayName: (displayName: string) => Promise<void>;
   clearError: () => void;
   reset: () => void;
 };
@@ -90,6 +92,9 @@ const checkAuthUseCase = createCheckAuthUseCase({
   authRepository: authRepository!,
   tokenStorage,
 });
+const updateProfileUseCase = createUpdateProfileUseCase({
+  authRepository: authRepository!,
+});
 
 // --- Location snapshot helper ---
 const sendLocationSnapshot = async (): Promise<void> => {
@@ -111,7 +116,7 @@ const sendLocationSnapshot = async (): Promise<void> => {
       latitude: position.coords.latitude,
       longitude: position.coords.longitude,
     });
-    console.log("[LocationSnapshot] POST /location success");
+    console.log("[LocationSnapshot] POST /location/update success");
   } catch (error) {
     console.warn("[LocationSnapshot] Failed:", error);
   }
@@ -235,6 +240,19 @@ const useAuthStore = create<AuthStore>((set) => ({
       }
     } catch {
       set({ ...initialState, isLoading: false });
+    }
+  },
+
+  updateDisplayName: async (displayName) => {
+    set({ isLoading: true, error: null });
+    try {
+      const updatedUser = await updateProfileUseCase.execute({ displayName });
+      await tokenStorage.saveUser(updatedUser);
+      set({ user: updatedUser, isLoading: false });
+      sendLocationSnapshot();
+    } catch (error) {
+      set({ isLoading: false, error: getErrorMessage(error) });
+      throw error;
     }
   },
 

@@ -31,6 +31,7 @@ type Connection = {
 
 type Contact = {
   userId: string;
+  displayName?: string;
   isLocationShared: boolean;
   theyShareLocation: boolean;
   isVisible: boolean;
@@ -40,6 +41,7 @@ type Contact = {
 
 type PendingRequest = {
   fromUserId: string;
+  displayName?: string;
   createdAt: string;
 };
 

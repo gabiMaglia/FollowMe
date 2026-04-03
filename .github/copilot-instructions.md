@@ -49,5 +49,6 @@ constants/         # Theme, config, enums.
 - Co-locate tests next to source: `foo.test.ts` beside `foo.ts`.
 - Keep hooks small and composable.
 - Platform-specific code uses file extensions: `.ios.ts`, `.android.ts`, `.web.ts`.
+- Every new feature must guarantee behavioral parity across iOS and Android before being considered complete.
 - Animations use React Native Reanimated worklets, not `Animated` API.
 - Use Expo APIs (expo-haptics, expo-image, etc.) over bare RN equivalents.

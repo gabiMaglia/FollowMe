@@ -136,7 +136,7 @@ export const ContactsScreen = () => {
                     <IncomingRequestCard
                       key={request.fromUserId}
                       userId={request.fromUserId}
-                      displayName={request.fromUserId}
+                      displayName={request.displayName ?? request.fromUserId}
                       onAccept={acceptRequest}
                       onReject={rejectRequest}
                       disabled={isLoadingAction}
@@ -155,7 +155,7 @@ export const ContactsScreen = () => {
                     <SentRequestCard
                       key={request.fromUserId}
                       userId={request.fromUserId}
-                      displayName={request.fromUserId}
+                      displayName={request.displayName ?? request.fromUserId}
                       onCancel={cancelRequest}
                       disabled={isLoadingAction}
                     />
@@ -189,7 +189,7 @@ export const ContactsScreen = () => {
                   <ContactCard
                     key={contact.userId}
                     userId={contact.userId}
-                    displayName={contact.userId}
+                    displayName={contact.displayName ?? contact.userId}
                     isLocationShared={contact.isLocationShared}
                     theyShareLocation={contact.theyShareLocation}
                     onRemove={handleRemoveContact}

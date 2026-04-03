@@ -1,12 +1,13 @@
 import * as Haptics from "expo-haptics";
 import { Image } from "expo-image";
-import { useEffect } from "react";
+import { useEffect, useMemo, useState } from "react";
 import {
     Alert,
     Pressable,
     ScrollView,
     StyleSheet,
     Switch,
+    TextInput,
     View,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
@@ -21,7 +22,9 @@ import { useThemeColor } from "@/hooks/use-theme-color";
 export default function ProfileScreen() {
   const user = useAuthStore((s) => s.user);
   const logout = useAuthStore((s) => s.logout);
+  const updateDisplayName = useAuthStore((s) => s.updateDisplayName);
   const isLoading = useAuthStore((s) => s.isLoading);
+  const [displayNameDraft, setDisplayNameDraft] = useState("");
 
   const contacts = useContactsStore((s) => s.contacts);
   const isDiscoverable = useContactsStore((s) => s.isDiscoverable);
@@ -36,11 +39,24 @@ export default function ProfileScreen() {
   const surfaceColor = useThemeColor({}, "surface");
   const borderColor = useThemeColor({}, "border");
   const errorColor = useThemeColor({}, "error");
+  const textSecondaryColor = useThemeColor({}, "textSecondary");
+  const inputBackgroundColor = useThemeColor({}, "inputBackground");
+  const textColor = useThemeColor({}, "text");
+  const textInverseColor = useThemeColor({}, "textInverse");
   const tintColor = useThemeColor({}, "tint");
+
+  const isDisplayNameDirty = useMemo(() => {
+    const currentDisplayName = user?.displayName ?? "";
+    return displayNameDraft.trim() !== currentDisplayName;
+  }, [displayNameDraft, user?.displayName]);
 
   useEffect(() => {
     loadContacts();
   }, [loadContacts]);
+
+  useEffect(() => {
+    setDisplayNameDraft(user?.displayName ?? "");
+  }, [user?.displayName]);
 
   const handleLogout = () => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
@@ -54,6 +70,24 @@ export default function ProfileScreen() {
         },
       },
     ]);
+  };
+
+  const handleSaveDisplayName = async () => {
+    try {
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+      await updateDisplayName(displayNameDraft);
+      Alert.alert(
+        "Perfil actualizado",
+        "Tu nombre se actualizó correctamente.",
+      );
+    } catch (error) {
+      Alert.alert(
+        "No se pudo actualizar",
+        error instanceof Error
+          ? error.message
+          : "Ocurrió un error al actualizar el nombre.",
+      );
+    }
   };
 
   return (
@@ -94,9 +128,44 @@ export default function ProfileScreen() {
             >
               <View style={styles.row}>
                 <ThemedText style={styles.label}>Display name</ThemedText>
-                <ThemedText style={styles.value}>
-                  {user?.displayName ?? "—"}
-                </ThemedText>
+              </View>
+              <View style={styles.inputRow}>
+                <TextInput
+                  value={displayNameDraft}
+                  onChangeText={setDisplayNameDraft}
+                  placeholder="Tu nombre"
+                  placeholderTextColor={textSecondaryColor}
+                  style={[
+                    styles.input,
+                    {
+                      backgroundColor: inputBackgroundColor,
+                      borderColor,
+                      color: textColor,
+                    },
+                  ]}
+                />
+                <Pressable
+                  onPress={handleSaveDisplayName}
+                  disabled={!isDisplayNameDirty || isLoading}
+                  style={({ pressed }) => [
+                    styles.saveButton,
+                    {
+                      backgroundColor: tintColor,
+                      opacity:
+                        !isDisplayNameDirty || isLoading
+                          ? 0.5
+                          : pressed
+                            ? 0.8
+                            : 1,
+                    },
+                  ]}
+                >
+                  <ThemedText
+                    style={[styles.saveButtonText, { color: textInverseColor }]}
+                  >
+                    Guardar
+                  </ThemedText>
+                </Pressable>
               </View>
               <View
                 style={[styles.divider, { backgroundColor: borderColor }]}
@@ -159,7 +228,7 @@ export default function ProfileScreen() {
                     ) : null}
                     <View style={styles.switchRow}>
                       <ThemedText style={styles.label} numberOfLines={1}>
-                        {contact.userId}
+                        {contact.displayName ?? contact.userId}
                       </ThemedText>
                       <Switch
                         value={contact.isLocationShared}
@@ -250,6 +319,30 @@ const styles = StyleSheet.create({
     paddingHorizontal: Spacing.md,
     paddingVertical: Spacing.sm,
     minHeight: 48,
+  },
+  inputRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    paddingHorizontal: Spacing.md,
+    paddingBottom: Spacing.sm,
+    gap: Spacing.xs,
+  },
+  input: {
+    flex: 1,
+    minHeight: 44,
+    borderWidth: 1,
+    borderRadius: Radii.md,
+    paddingHorizontal: Spacing.sm,
+  },
+  saveButton: {
+    minHeight: 44,
+    borderRadius: Radii.md,
+    justifyContent: "center",
+    alignItems: "center",
+    paddingHorizontal: Spacing.md,
+  },
+  saveButtonText: {
+    fontWeight: "600",
   },
   switchRow: {
     flexDirection: "row",

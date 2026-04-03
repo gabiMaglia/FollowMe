@@ -7,7 +7,7 @@ const createLocationApiAdapter = (
   client: AxiosInstance,
 ): LocationSharingRepository => ({
   sendLocationUpdate: async (coordinates) => {
-    await client.post("/location", {
+    await client.post("/location/update", {
       latitude: coordinates.latitude,
       longitude: coordinates.longitude,
     });
@@ -20,6 +20,12 @@ const createLocationApiAdapter = (
     if (!Array.isArray(data)) return [];
 
     const mapped = data.map((item: Record<string, unknown>) => {
+      const userId = String(item.userId ?? item.id ?? "");
+      const displayNameRaw =
+        (typeof item.displayName === "string" && item.displayName) ||
+        (typeof item.display_name === "string" && item.display_name) ||
+        (typeof item.name === "string" && item.name) ||
+        userId;
       const timestamp =
         typeof item.timestamp === "number"
           ? item.timestamp
@@ -27,10 +33,8 @@ const createLocationApiAdapter = (
             ? new Date(String(item.updatedAt)).getTime()
             : Date.now();
       const mappedContact = {
-        userId: String(item.userId ?? item.id ?? ""),
-        displayName: String(
-          item.displayName ?? item.display_name ?? item.name ?? "Unknown",
-        ),
+        userId,
+        displayName: displayNameRaw,
         coordinates: {
           latitude:
             Number(

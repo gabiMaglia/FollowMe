@@ -1,6 +1,7 @@
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 import { useAuthStore } from "@/hooks/use-auth-store";
+import { useContactsStore } from "@/hooks/use-contacts-store";
 import { createApiClient } from "@/src/adapters/api/api-client";
 import { createLocationApiAdapter } from "@/src/adapters/api/location-api-adapter";
 import { createLocationTrackingService } from "@/src/adapters/location/location-tracking-adapter";
@@ -30,6 +31,8 @@ const realtimeService = createSocketRealtimeService();
 
 export const useMapTracking = () => {
   const user = useAuthStore((s) => s.user);
+  const contacts = useContactsStore((s) => s.contacts);
+  const loadContacts = useContactsStore((s) => s.loadContacts);
   const [state, setState] = useState<MapState>({
     userLocation: null,
     contacts: new Map(),
@@ -37,6 +40,32 @@ export const useMapTracking = () => {
     permissionStatus: "undetermined",
   });
   const foregroundCleanupRef = useRef<(() => void) | null>(null);
+
+  const contactNameById = useMemo(() => {
+    const map = new Map<string, string>();
+    for (const contact of contacts) {
+      if (contact.displayName?.trim()) {
+        map.set(contact.userId, contact.displayName);
+      }
+    }
+    return map;
+  }, [contacts]);
+
+  const resolveDisplayName = useCallback(
+    (userId: string, fallbackName: string) => {
+      const knownName = contactNameById.get(userId);
+      if (knownName) {
+        return knownName;
+      }
+
+      if (fallbackName.trim().length === 0) {
+        return userId;
+      }
+
+      return fallbackName;
+    },
+    [contactNameById],
+  );
 
   const startTracking = useCallback(async () => {
     const status = await locationService.requestPermissions();
@@ -104,7 +133,10 @@ export const useMapTracking = () => {
     const unsubscribe = realtimeService.onContactLocationUpdate((contact) => {
       setState((prev) => {
         const next = new Map(prev.contacts);
-        next.set(contact.userId, contact);
+        next.set(contact.userId, {
+          ...contact,
+          displayName: resolveDisplayName(contact.userId, contact.displayName),
+        });
         return { ...prev, contacts: next };
       });
     });
@@ -113,7 +145,7 @@ export const useMapTracking = () => {
       unsubscribe();
       realtimeService.disconnect();
     };
-  }, [state.isTracking, user]);
+  }, [resolveDisplayName, state.isTracking, user]);
 
   // Fetch last known contact locations on startup (covers offline contacts)
   useEffect(() => {
@@ -130,10 +162,17 @@ export const useMapTracking = () => {
         setState((prev) => {
           const next = new Map(prev.contacts);
           for (const contact of contactLocations) {
+            const normalizedContact = {
+              ...contact,
+              displayName: resolveDisplayName(
+                contact.userId,
+                contact.displayName,
+              ),
+            };
             // Only set if we don't already have a more recent WS update
-            const existing = next.get(contact.userId);
-            if (!existing || existing.timestamp < contact.timestamp) {
-              next.set(contact.userId, contact);
+            const existing = next.get(normalizedContact.userId);
+            if (!existing || existing.timestamp < normalizedContact.timestamp) {
+              next.set(normalizedContact.userId, normalizedContact);
             }
           }
           return { ...prev, contacts: next };
@@ -150,7 +189,34 @@ export const useMapTracking = () => {
     const interval = setInterval(fetchContactLocations, 60_000);
 
     return () => clearInterval(interval);
-  }, [state.isTracking, user]);
+  }, [resolveDisplayName, state.isTracking, user]);
+
+  // Load contacts so map can resolve names by userId.
+  useEffect(() => {
+    if (!user) {
+      return;
+    }
+    loadContacts();
+  }, [loadContacts, user]);
+
+  // Re-map already received locations when contact names are refreshed.
+  useEffect(() => {
+    setState((prev) => {
+      if (prev.contacts.size === 0) {
+        return prev;
+      }
+
+      const next = new Map<string, ContactLocation>();
+      prev.contacts.forEach((contact, userId) => {
+        next.set(userId, {
+          ...contact,
+          displayName: resolveDisplayName(userId, contact.displayName),
+        });
+      });
+
+      return { ...prev, contacts: next };
+    });
+  }, [resolveDisplayName]);
 
   // Auto-start tracking when user is authenticated
   useEffect(() => {
@@ -164,22 +230,6 @@ export const useMapTracking = () => {
   }, [user?.onboardingCompleted, startTracking, stopTracking]);
 
   const contactsList = Array.from(state.contacts.values());
-
-  // DEBUG: Add a fake contact 10m north of user location
-  const debugContacts = state.userLocation
-    ? [
-        ...contactsList,
-        {
-          userId: "fake-debug-contact",
-          displayName: "Fantasma",
-          coordinates: {
-            latitude: state.userLocation.latitude + 0.0001,
-            longitude: state.userLocation.longitude + 0.0001,
-          },
-          timestamp: Date.now(),
-        },
-      ]
-    : contactsList;
 
   const sendCurrentLocation = useCallback(async () => {
     if (!state.userLocation) {
@@ -200,7 +250,7 @@ export const useMapTracking = () => {
 
   return {
     userLocation: state.userLocation,
-    contacts: debugContacts,
+    contacts: contactsList,
     isTracking: state.isTracking,
     permissionStatus: state.permissionStatus,
     hasBackgroundPermission: state.permissionStatus === "background",

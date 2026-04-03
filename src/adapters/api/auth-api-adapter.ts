@@ -16,6 +16,7 @@ import type {
     RefreshResponse,
     RegisterParams,
     RegisterResponse,
+    UpdateProfileParams,
 } from "@/src/ports/outbound/auth-repository";
 
 const createAuthApiAdapter = (client: AxiosInstance): AuthRepository => ({
@@ -115,6 +116,23 @@ const createAuthApiAdapter = (client: AxiosInstance): AuthRepository => ({
       ) {
         throw new OnboardingAlreadyCompletedError();
       }
+      if (isAxiosError(error) && !error.response) {
+        throw new NetworkError();
+      }
+      throw error;
+    }
+  },
+
+  updateMyProfile: async (params: UpdateProfileParams) => {
+    try {
+      const { data } = await client.patch("/users/me", params);
+      return {
+        id: data.id,
+        email: data.email,
+        displayName: data.displayName,
+        onboardingCompleted: data.onboardingCompleted,
+      };
+    } catch (error: unknown) {
       if (isAxiosError(error) && !error.response) {
         throw new NetworkError();
       }
